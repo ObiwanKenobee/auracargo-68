@@ -1,106 +1,95 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, useEffect } from "react";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import Services from "./pages/Services";
-import Projects from "./pages/Projects";
-import Contact from "./pages/Contact";
-import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import TrackingPage from "./pages/TrackingPage";
-import CreateShipment from "./pages/CreateShipment";
-import SupportChat from "./pages/SupportChat";
-import NotFound from "./pages/NotFound";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Faq from "./pages/Faq";
-import LoadingSpinner from "./components/LoadingSpinner";
-import ChatBubble from "./components/ChatBubble";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
+import { Toaster } from './components/ui/toaster';
 
-// Configure React Query with sensible defaults
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1, // Only retry failed queries once
-      staleTime: 30000, // Consider data fresh for 30 seconds
-      refetchOnWindowFocus: false, // Don't refetch when window regains focus
-      gcTime: 60000, // Keep unused data in cache for 1 minute
-    },
-  },
-});
+// Pages
+import Index from './pages/Index';
+import Home from './pages/Home';
+import Service from './pages/Service';
+import LocationService from './pages/LocationService';
+import Locations from './pages/Locations';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import Contact from './pages/Contact';
+import ForgotPassword from './pages/ForgotPassword';
+import Services from './pages/Services';
+import TrackingPage from './pages/TrackingPage';
+import SupportChat from './pages/SupportChat';
+import NotFound from './pages/NotFound';
 
-// Wrapper component to conditionally show ChatBubble
-const AppContent = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+// Layout Components
+import Navigation from './components/Navigation';
+import Footer from './components/Footer';
 
-  useEffect(() => {
-    // Reduce loading time to improve UX
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500); // Reduced from 800ms to 500ms for faster initial load
+// Dashboard Pages
+import Overview from './pages/dashboard/Overview';
+import Shipments from './pages/dashboard/Shipments';
+import Documents from './pages/dashboard/Documents';
+import Settings from './pages/dashboard/Settings';
 
-    return () => clearTimeout(timer);
-  }, []);
+// Admin Pages
+import AdminOverview from './pages/admin/Overview';
+import AdminUsers from './pages/admin/Users';
+import AdminShipmentsManagement from './pages/admin/ShipmentsManagement';
+import AdminSupportManagement from './pages/admin/SupportManagement';
+import AdminSystemSettings from './pages/admin/SystemSettings';
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+// Auth Components
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
-  return (
-    <>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/tracking/:trackingNumber" element={<TrackingPage />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/create-shipment" element={<ProtectedRoute><CreateShipment /></ProtectedRoute>} />
-        <Route path="/support" element={<ProtectedRoute><SupportChat /></ProtectedRoute>} />
-        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/faq" element={<Faq />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      
-      {/* Show Chat Bubble on all pages except Admin and Support pages when user is logged in */}
-      {user && !window.location.pathname.includes('/admin') && !window.location.pathname.includes('/support') && (
-        <ChatBubble />
-      )}
-    </>
-  );
-};
+const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+      <HelmetProvider>
+        <Router>
+          <Navigation />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/services/:service" element={<Service />} />
+            <Route path="/locations" element={<Locations />} />
+            <Route path="/locations/:location/:service" element={<LocationService />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/tracking" element={<TrackingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />}>
+                <Route index element={<Overview />} />
+                <Route path="shipments" element={<Shipments />} />
+                <Route path="documents" element={<Documents />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
+              <Route path="/support" element={<SupportChat />} />
+            </Route>
+            
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminDashboard />}>
+                <Route index element={<AdminOverview />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="shipments" element={<AdminShipmentsManagement />} />
+                <Route path="support" element={<AdminSupportManagement />} />
+                <Route path="settings" element={<AdminSystemSettings />} />
+              </Route>
+            </Route>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Footer />
+          <Toaster />
+        </Router>
+      </HelmetProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
