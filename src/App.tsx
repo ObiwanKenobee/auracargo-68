@@ -67,10 +67,46 @@ function App() {
                 <Dashboard />
               </ProtectedRoute>
             }>
-              <Route index element={<Overview />} />
-              <Route path="shipments" element={<Shipments />} />
-              <Route path="documents" element={<Documents />} />
-              <Route path="settings" element={<Settings />} />
+              <Route index element={
+                <Overview 
+                  loading={false} 
+                  data={{
+                    recentShipments: [],
+                    stats: {
+                      totalShipments: 0,
+                      inTransit: 0,
+                      delivered: 0,
+                      delayed: 0
+                    }
+                  }}
+                  setActiveTab={() => {}} 
+                />
+              } />
+              <Route path="shipments" element={
+                <Shipments 
+                  loading={false} 
+                  shipments={[]} 
+                />
+              } />
+              <Route path="documents" element={
+                <Documents 
+                  loading={false} 
+                  documents={[]} 
+                />
+              } />
+              <Route path="settings" element={
+                <Settings 
+                  loading={false} 
+                  profile={{
+                    id: '',
+                    name: '',
+                    email: '',
+                    role: '',
+                    organization: '',
+                    preferences: {}
+                  }} 
+                />
+              } />
             </Route>
             
             <Route path="/support" element={

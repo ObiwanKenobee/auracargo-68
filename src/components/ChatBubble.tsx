@@ -8,17 +8,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { SupportConversation, SupportMessage } from "@/types/chat";
+import { 
+  fetchRecentConversation, 
+  fetchMessages, 
+  sendSupportMessage,
+  createNewConversation,
+  markMessagesAsRead 
+} from "@/api/chat";
 
 const ChatBubble = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [recentMessages, setRecentMessages] = useState<SupportMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeConversation, setActiveConversation] = useState<any>(null);
+  const [activeConversation, setActiveConversation] = useState<SupportConversation | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -26,7 +33,15 @@ const ChatBubble = () => {
 
   useEffect(() => {
     if (isOpen && user) {
-      fetchRecentConversation();
+      fetchRecentConversation(user.id).then(conversation => {
+        if (conversation) {
+          setActiveConversation(conversation);
+          getMessages(conversation.id);
+        } else {
+          setRecentMessages([]);
+        }
+        setIsLoading(false);
+      });
     }
   }, [isOpen, user]);
 
@@ -34,96 +49,25 @@ const ChatBubble = () => {
     scrollToBottom();
   }, [recentMessages]);
 
-  useEffect(() => {
-    if (activeConversation) {
-      const messagesChannel = supabase
-        .channel(`bubble-messages-${activeConversation.id}`)
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${activeConversation.id}` },
-          (payload) => {
-            console.log('Message change detected:', payload);
-            fetchMessages(activeConversation.id);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(messagesChannel);
-      };
-    }
-  }, [activeConversation]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchRecentConversation = async () => {
-    if (!user) return;
-    
+  const getMessages = async (conversationId: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('support_conversations')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'open')
-        .order('updated_at', { ascending: false })
-        .limit(1);
-        
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setActiveConversation(data[0]);
-        fetchMessages(data[0].id);
-      } else {
-        setRecentMessages([]);
-      }
-    } catch (error: any) {
-      console.error('Error fetching recent conversation:', error);
-      toast({
-        variant: "destructive",
-        title: "Connection error",
-        description: "Could not load your recent conversations",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchMessages = async (conversationId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('support_messages')
-        .select(`
-          *,
-          sender:sender_id(
-            id,
-            first_name,
-            last_name,
-            role
-          )
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true })
-        .limit(10);
-
-      if (error) throw error;
-      
-      setRecentMessages(data || []);
-      
-      await supabase
-        .from('support_messages')
-        .update({ read: true })
-        .eq('conversation_id', conversationId)
-        .eq('is_admin', true)
-        .eq('read', false);
-    } catch (error: any) {
+      const messages = await fetchMessages(conversationId);
+      setRecentMessages(messages);
+      await markMessagesAsRead(conversationId, false);
+    } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Could not load messages",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -133,30 +77,18 @@ const ChatBubble = () => {
     if (!message.trim() || !user) return;
     
     if (!activeConversation) {
-      await createNewConversation();
+      await handleCreateNewConversation();
       return;
     }
     
     setIsSending(true);
     
     try {
-      const { error } = await supabase
-        .from('support_messages')
-        .insert({
-          conversation_id: activeConversation.id,
-          sender_id: user.id,
-          content: message,
-          is_admin: false,
-        });
-        
-      if (error) throw error;
-      
-      await supabase
-        .from('support_conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', activeConversation.id);
-      
+      await sendSupportMessage(activeConversation.id, user.id, message);
       setMessage("");
+      
+      // Refresh messages
+      await getMessages(activeConversation.id);
       
       toast({
         variant: "success",
@@ -174,38 +106,18 @@ const ChatBubble = () => {
     }
   };
 
-  const createNewConversation = async () => {
+  const handleCreateNewConversation = async () => {
     if (!user || !message.trim()) return;
     
     setIsSending(true);
     
     try {
-      const { data: conversationData, error: conversationError } = await supabase
-        .from('support_conversations')
-        .insert({
-          user_id: user.id,
-          title: 'Quick Support Chat',
-        })
-        .select()
-        .single();
-
-      if (conversationError) throw conversationError;
+      const newConversation = await createNewConversation(user.id, message);
       
-      if (conversationData) {
-        const { error: messageError } = await supabase
-          .from('support_messages')
-          .insert({
-            conversation_id: conversationData.id,
-            sender_id: user.id,
-            is_admin: false,
-            content: message,
-          });
-          
-        if (messageError) throw messageError;
-        
-        setActiveConversation(conversationData);
+      if (newConversation) {
+        setActiveConversation(newConversation);
         setMessage("");
-        fetchMessages(conversationData.id);
+        await getMessages(newConversation.id);
         
         toast({
           variant: "info",
