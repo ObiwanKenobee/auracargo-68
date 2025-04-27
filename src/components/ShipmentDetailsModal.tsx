@@ -1,240 +1,198 @@
 
-import React, { useState, useEffect } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { 
-  Package, 
-  User, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  Weight, 
-  Box,
-  Mail,
-  Hash,
-  Truck
-} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Package, Clock, MapPin, Truck, FileText, User, Mail, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { mockData } from "@/utils/mockData";
 
-interface ShipmentDetailsModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  shipment: any;
+// Just for typing purposes, these are simplified from what you'd use in a real app
+interface TrackingEvent {
+  id: string;
+  shipment_id: string;
+  status: string;
+  location: string;
+  timestamp: string;
+  description: string;
 }
 
-const ShipmentDetailsModal: React.FC<ShipmentDetailsModalProps> = ({
-  open,
-  onOpenChange,
-  shipment
-}) => {
-  const [trackingEvents, setTrackingEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ShipmentDetailsModalProps {
+  shipmentId: string;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const ShipmentDetailsModal = ({ shipmentId, isOpen, onClose }: ShipmentDetailsModalProps) => {
+  const [shipment, setShipment] = useState<any>(null);
+  const [trackingEvents, setTrackingEvents] = useState<TrackingEvent[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (open && shipment) {
-      fetchTrackingEvents();
-    }
-  }, [open, shipment?.id]);
-
-  const fetchTrackingEvents = async () => {
-    if (!shipment) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('tracking_events')
-        .select('*')
-        .eq('shipment_id', shipment.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
+    if (isOpen && shipmentId) {
+      // Fetch shipment details
+      setLoading(true);
       
-      setTrackingEvents(data || []);
-    } catch (err) {
-      console.error('Error fetching tracking events:', err);
-    } finally {
-      setLoading(false);
+      // Instead of querying Supabase directly, use mock data
+      const mockShipment = mockData.generateMockShipment({ id: shipmentId });
+      const mockEvents = mockData.generateMockTrackingEvents(shipmentId, 5);
+      
+      // Simulate API call delay
+      setTimeout(() => {
+        setShipment(mockShipment);
+        setTrackingEvents(mockEvents);
+        setLoading(false);
+      }, 500);
     }
+  }, [isOpen, shipmentId]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    }).format(date);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Delivered": return "bg-green-100 text-green-800";
-      case "In Transit": return "bg-blue-100 text-blue-800";
-      case "Processing": 
-      case "Approved": return "bg-purple-100 text-purple-800";
-      case "Pending": return "bg-yellow-100 text-yellow-800";
-      case "Delayed": return "bg-orange-100 text-orange-800";
-      case "Rejected": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  if (!shipment) return null;
+  if (!isOpen) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Shipment Details
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <Package className="text-primary" size={20} />
+            {loading ? 'Loading shipment details...' : `Shipment Details: ${shipment?.tracking_number}`}
           </DialogTitle>
-          <DialogDescription>
-            Complete information about shipment #{shipment.tracking_number}
-          </DialogDescription>
         </DialogHeader>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <Badge className={`mt-1 ${getStatusColor(shipment.status)}`}>
+
+        {loading ? (
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : shipment ? (
+          <div className="space-y-6">
+            <div className="flex justify-between items-start">
+              <Badge variant={
+                shipment.status === 'Delivered' ? 'success' :
+                shipment.status === 'In Transit' ? 'warning' :
+                'default'
+              }>
                 {shipment.status}
               </Badge>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Tracking Number</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Hash className="h-4 w-4 text-gray-500" />
-                <span>{shipment.tracking_number}</span>
+              <div className="text-sm text-muted-foreground">
+                <Clock size={14} className="inline mr-1" />
+                Created: {formatDate(shipment.created_at)}
               </div>
             </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Created Date</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span>{format(new Date(shipment.created_at), 'PPP')}</span>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Sender Information</h3>
-              <div className="space-y-1 mt-1">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span>{shipment.sender_name || "N/A"}</span>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">Origin</h3>
+                <div className="flex items-start gap-2">
+                  <MapPin size={16} className="text-primary mt-1" />
+                  <span>{shipment.origin}</span>
                 </div>
-                {shipment.sender_email && (
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">Destination</h3>
+                <div className="flex items-start gap-2">
+                  <MapPin size={16} className="text-primary mt-1" />
+                  <span>{shipment.destination}</span>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">Weight</h3>
+                <div className="flex items-start gap-2">
+                  <Truck size={16} className="text-primary mt-1" />
+                  <span>{shipment.weight} kg</span>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">Shipping Term</h3>
+                <div className="flex items-start gap-2">
+                  <FileText size={16} className="text-primary mt-1" />
+                  <span>{shipment.term}</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">Sender</h3>
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-gray-500" />
+                    <User size={14} className="text-primary" />
+                    <span>{shipment.sender_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail size={14} className="text-primary" />
                     <span>{shipment.sender_email}</span>
                   </div>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Origin</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span>{shipment.origin}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Current Location</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Truck className="h-4 w-4 text-gray-500" />
-                <span>{shipment.current_location || "Not assigned"}</span>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Receiver Information</h3>
-              <div className="space-y-1 mt-1">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span>{shipment.receiver_name || "N/A"}</span>
                 </div>
-                {shipment.receiver_email && (
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">Receiver</h3>
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-gray-500" />
+                    <User size={14} className="text-primary" />
+                    <span>{shipment.receiver_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail size={14} className="text-primary" />
                     <span>{shipment.receiver_email}</span>
                   </div>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Destination</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span>{shipment.destination}</span>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Package Details</h3>
-              <div className="space-y-1 mt-1">
-                <div className="flex items-center gap-2">
-                  <Weight className="h-4 w-4 text-gray-500" />
-                  <span>Weight: {shipment.weight || "0"} kg</span>
                 </div>
-                {shipment.physical_weight && (
-                  <div className="flex items-center gap-2">
-                    <Weight className="h-4 w-4 text-gray-500" />
-                    <span>Physical Weight: {shipment.physical_weight} kg</span>
-                  </div>
-                )}
-                {shipment.volume && (
-                  <div className="flex items-center gap-2">
-                    <Box className="h-4 w-4 text-gray-500" />
-                    <span>Volume: {shipment.volume}</span>
-                  </div>
-                )}
-                {shipment.quantity && (
-                  <div className="flex items-center gap-2">
-                    <Box className="h-4 w-4 text-gray-500" />
-                    <span>Quantity: {shipment.quantity}</span>
-                  </div>
-                )}
-                {shipment.term && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span>Term: {shipment.term}</span>
-                  </div>
-                )}
               </div>
+            </div>
+
+            <Separator />
+            
+            <div>
+              <h3 className="font-medium mb-3">Tracking History</h3>
+              <div className="space-y-4">
+                {trackingEvents.map((event, index) => (
+                  <div key={event.id} className="relative pl-6 pb-4">
+                    {index < trackingEvents.length - 1 && (
+                      <div className="absolute left-[9px] top-[18px] bottom-0 w-0.5 bg-gray-200"></div>
+                    )}
+                    <div className="absolute left-0 top-1.5 w-[18px] h-[18px] rounded-full bg-primary"></div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{event.status}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(event.timestamp)}
+                        </span>
+                      </div>
+                      <div className="text-sm mt-1">
+                        <span className="text-muted-foreground">{event.location}</span>
+                        <p>{event.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
             </div>
           </div>
-        </div>
-        
-        <div className="border-t pt-4 mt-4">
-          <h3 className="font-medium mb-3">Tracking History</h3>
-          
-          {loading ? (
-            <div className="text-center py-4">Loading tracking events...</div>
-          ) : trackingEvents.length > 0 ? (
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-              {trackingEvents.map((event) => (
-                <div key={event.id} className="bg-gray-50 p-3 rounded-md">
-                  <div className="flex justify-between">
-                    <span className="font-medium capitalize">{event.event_type.replace(/-/g, ' ')}</span>
-                    <span className="text-sm text-gray-500">{format(new Date(event.created_at), 'MMM dd, yyyy HH:mm')}</span>
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {event.location && <div>Location: {event.location}</div>}
-                    {event.description && <div className="mt-1">{event.description}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-4 text-gray-500">No tracking events found</div>
-          )}
-        </div>
+        ) : (
+          <div className="p-4 text-center">
+            <p>Shipment not found.</p>
+            <Button variant="outline" onClick={onClose} className="mt-4">
+              Close
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

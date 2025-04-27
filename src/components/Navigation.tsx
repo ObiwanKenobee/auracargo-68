@@ -3,16 +3,18 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Truck, UserCircle, Shield, LogOut } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+
+// Import the auth context
+import { useMockAuth } from "@/contexts/MockAuthContext";
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   
-  // Safe access to auth context (prevent null access)
-  const auth = useAuth() || {};
-  const { user, profile, signOut, isAdmin } = auth;
+  // Safe access to auth context
+  const auth = useMockAuth();
+  const { user, profile, signOut, isAdmin } = auth || {};
 
   // Only homepage should have white text when not scrolled
   const isHomePage = location.pathname === '/';

@@ -81,11 +81,7 @@ function App() {
             <Route index element={
               <Overview 
                 loading={false} 
-                data={{
-                  shipments: dashboardData.shipments,
-                  notifications: dashboardData.notifications,
-                  stats: dashboardData.stats
-                }}
+                data={dashboardData}
                 setActiveTab={() => {}} 
               />
             } />

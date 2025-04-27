@@ -55,6 +55,14 @@ export async function fetchMessages(conversationId: string) {
       // Create mock sender data as we don't have the proper relationship
       const isAdmin = msg.sender_id?.includes('admin') || false;
       
+      // Mock sender data with required properties
+      const mockSender = {
+        id: msg.sender_id || '',
+        first_name: isAdmin ? 'Admin' : 'User',
+        last_name: '',
+        role: isAdmin ? 'admin' : 'customer'
+      };
+      
       return {
         id: msg.id || uuidv4(),
         conversation_id: msg.thread_id || conversationId,
@@ -63,12 +71,7 @@ export async function fetchMessages(conversationId: string) {
         created_at: msg.created_at || new Date().toISOString(),
         is_admin: isAdmin,
         read: msg.read || false,
-        sender: {
-          id: msg.sender_id || '',
-          first_name: isAdmin ? 'Admin' : 'User',
-          last_name: '',
-          role: isAdmin ? 'admin' : 'customer'
-        }
+        sender: mockSender
       };
     }) || [];
     
