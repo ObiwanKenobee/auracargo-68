@@ -62,24 +62,33 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />}>
-                <Route index element={<Overview />} />
-                <Route path="shipments" element={<Shipments />} />
-                <Route path="documents" element={<Documents />} />
-                <Route path="settings" element={<Settings />} />
-              </Route>
-              <Route path="/support" element={<SupportChat />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Overview />} />
+              <Route path="shipments" element={<Shipments />} />
+              <Route path="documents" element={<Documents />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
             
-            <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AdminDashboard />}>
-                <Route index element={<AdminOverview />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="shipments" element={<AdminShipmentsManagement />} />
-                <Route path="support" element={<AdminSupportManagement />} />
-                <Route path="settings" element={<AdminSystemSettings />} />
-              </Route>
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <SupportChat />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }>
+              <Route index element={<AdminOverview />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="shipments" element={<AdminShipmentsManagement />} />
+              <Route path="support" element={<AdminSupportManagement />} />
+              <Route path="settings" element={<AdminSystemSettings />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
