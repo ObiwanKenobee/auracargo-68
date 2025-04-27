@@ -45,95 +45,100 @@ import AdminRoute from './components/AdminRoute';
 const queryClient = new QueryClient();
 
 function App() {
+  // Mock data for dashboard components
+  const dashboardData = {
+    shipments: [],
+    notifications: [],
+    stats: {
+      totalShipments: 0,
+      inTransit: 0,
+      delivered: 0,
+      delayed: 0
+    }
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <Router>
-          <Navigation />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/services/:service" element={<Service />} />
-            <Route path="/locations" element={<Locations />} />
-            <Route path="/locations/:location/:service" element={<LocationService />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/tracking" element={<TrackingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }>
-              <Route index element={
-                <Overview 
-                  loading={false} 
-                  data={{
-                    shipments: [],
-                    notifications: [],
-                    stats: {
-                      totalShipments: 0,
-                      inTransit: 0,
-                      delivered: 0,
-                      delayed: 0
-                    }
-                  }}
-                  setActiveTab={() => {}} 
-                />
-              } />
-              <Route path="shipments" element={
-                <Shipments 
-                  loading={false} 
-                  shipments={[]} 
-                />
-              } />
-              <Route path="documents" element={
-                <Documents 
-                  loading={false} 
-                  documents={[]} 
-                />
-              } />
-              <Route path="settings" element={
-                <Settings 
-                  loading={false} 
-                  profile={{
-                    id: '',
-                    name: '',
-                    email: '',
-                    role: '',
-                    organization: '',
-                    preferences: {}
-                  }} 
-                />
-              } />
-            </Route>
-            
-            <Route path="/support" element={
-              <ProtectedRoute>
-                <SupportChat />
-              </ProtectedRoute>
+      <Router>
+        <Navigation />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:service" element={<Service />} />
+          <Route path="/locations" element={<Locations />} />
+          <Route path="/locations/:location/:service" element={<LocationService />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/tracking" element={<TrackingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }>
+            <Route index element={
+              <Overview 
+                loading={false} 
+                data={{
+                  shipments: dashboardData.shipments,
+                  notifications: dashboardData.notifications,
+                  stats: dashboardData.stats
+                }}
+                setActiveTab={() => {}} 
+              />
             } />
-            
-            <Route path="/admin" element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            }>
-              <Route index element={<AdminOverview />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="shipments" element={<AdminShipmentsManagement />} />
-              <Route path="support" element={<AdminSupportManagement />} />
-              <Route path="settings" element={<AdminSystemSettings />} />
-            </Route>
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Footer />
-          <Toaster />
-        </Router>
-      </HelmetProvider>
+            <Route path="shipments" element={
+              <Shipments 
+                loading={false} 
+                shipments={dashboardData.shipments} 
+              />
+            } />
+            <Route path="documents" element={
+              <Documents 
+                loading={false} 
+                documents={[]} 
+              />
+            } />
+            <Route path="settings" element={
+              <Settings 
+                loading={false} 
+                profile={{
+                  id: '',
+                  name: '',
+                  email: '',
+                  role: '',
+                  organization: '',
+                  preferences: {}
+                }} 
+              />
+            } />
+          </Route>
+          
+          <Route path="/support" element={
+            <ProtectedRoute>
+              <SupportChat />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }>
+            <Route index element={<AdminOverview />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="shipments" element={<AdminShipmentsManagement />} />
+            <Route path="support" element={<AdminSupportManagement />} />
+            <Route path="settings" element={<AdminSystemSettings />} />
+          </Route>
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Footer />
+        <Toaster />
+      </Router>
     </QueryClientProvider>
   );
 }

@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SupportConversation, SupportMessage } from "@/types/chat";
-import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
 
 // Since we don't have the actual tables, we'll use messages table as a proxy
@@ -23,12 +22,12 @@ export async function fetchRecentConversation(userId: string) {
     if (data && data.length > 0) {
       // Use message thread_id as our conversation ID
       const conversation: SupportConversation = {
-        id: data[0].thread_id,
+        id: data[0].thread_id || uuidv4(),
         title: 'Quick Support Chat',
         user_id: userId,
         status: 'open',
-        created_at: data[0].created_at,
-        updated_at: data[0].created_at
+        created_at: data[0].created_at || new Date().toISOString(),
+        updated_at: data[0].created_at || new Date().toISOString()
       };
       
       return conversation;
@@ -54,22 +53,22 @@ export async function fetchMessages(conversationId: string) {
     // Convert to our expected format
     const messages: SupportMessage[] = data?.map(msg => {
       // Create mock sender data as we don't have the proper relationship
-      const mockSender = {
-        id: msg.sender_id,
-        first_name: 'User',
-        last_name: '',
-        role: msg.sender_id.includes('admin') ? 'admin' : 'customer'
-      };
-
+      const isAdmin = msg.sender_id?.includes('admin') || false;
+      
       return {
-        id: msg.id,
-        conversation_id: msg.thread_id,
-        sender_id: msg.sender_id,
-        content: msg.content,
-        created_at: msg.created_at,
-        is_admin: mockSender.role === 'admin',
+        id: msg.id || uuidv4(),
+        conversation_id: msg.thread_id || conversationId,
+        sender_id: msg.sender_id || '',
+        content: msg.content || '',
+        created_at: msg.created_at || new Date().toISOString(),
+        is_admin: isAdmin,
         read: msg.read || false,
-        sender: mockSender
+        sender: {
+          id: msg.sender_id || '',
+          first_name: isAdmin ? 'Admin' : 'User',
+          last_name: '',
+          role: isAdmin ? 'admin' : 'customer'
+        }
       };
     }) || [];
     

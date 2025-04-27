@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,10 @@ const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, profile, signOut, isAdmin } = useAuth();
+  
+  // Safe access to auth context (prevent null access)
+  const auth = useAuth() || {};
+  const { user, profile, signOut, isAdmin } = auth;
 
   // Only homepage should have white text when not scrolled
   const isHomePage = location.pathname === '/';
@@ -113,7 +117,7 @@ const Navigation = () => {
                   className={`font-medium ${
                     shouldUseDarkText ? 'text-kargon-dark hover:text-kargon-red' : 'text-white hover:text-white/80'
                   } hover:bg-transparent`}
-                  onClick={() => signOut()}
+                  onClick={() => signOut && signOut()}
                 >
                   <LogOut className="mr-2 h-5 w-5" />
                   LOGOUT
@@ -193,7 +197,7 @@ const Navigation = () => {
                     className="font-medium text-kargon-dark hover:text-kargon-red py-2 flex items-center" 
                     onClick={() => {
                       setIsMenuOpen(false);
-                      signOut();
+                      if (signOut) signOut();
                     }}
                   >
                     <LogOut className="mr-2 h-5 w-5" /> LOGOUT
