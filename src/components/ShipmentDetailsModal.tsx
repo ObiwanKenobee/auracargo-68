@@ -77,8 +77,8 @@ const ShipmentDetailsModal = ({ shipmentId, isOpen, onClose }: ShipmentDetailsMo
           <div className="space-y-6">
             <div className="flex justify-between items-start">
               <Badge variant={
-                shipment.status === 'Delivered' ? 'success' :
-                shipment.status === 'In Transit' ? 'warning' :
+                shipment.status === 'Delivered' ? 'secondary' :
+                shipment.status === 'In Transit' ? 'outline' :
                 'default'
               }>
                 {shipment.status}
@@ -89,6 +89,7 @@ const ShipmentDetailsModal = ({ shipmentId, isOpen, onClose }: ShipmentDetailsMo
               </div>
             </div>
 
+            {/* Rest of component */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground mb-1">Origin</h3>

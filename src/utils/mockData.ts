@@ -1,67 +1,68 @@
 
-import { v4 as uuidv4 } from 'uuid';
+// This file is used to generate mock data for the application
+// Useful during development or when the backend is not connected
 
-/**
- * Mock data utilities for the application
- */
 export const mockData = {
-  /**
-   * Generate mock shipment data
-   */
-  generateMockShipment(override = {}) {
+  // Generate a mock shipment with customizable properties
+  generateMockShipment: (options: { id?: string } = {}) => {
+    const id = options.id || `ship_${Math.random().toString(36).substring(2, 9)}`;
     return {
-      id: uuidv4(),
+      id,
       tracking_number: `AUR${Math.floor(100000 + Math.random() * 900000)}`,
-      origin: 'New York, NY',
-      destination: 'Los Angeles, CA',
-      weight: Math.floor(1 + Math.random() * 100),
-      status: 'In Transit',
-      created_at: new Date().toISOString(),
-      user_id: uuidv4(),
-      sender_name: 'John Doe',
-      sender_email: 'john@example.com',
-      receiver_name: 'Jane Smith',
-      receiver_email: 'jane@example.com',
-      term: 'Express',
-      physical_weight: Math.floor(1 + Math.random() * 90),
-      quantity: Math.floor(1 + Math.random() * 5),
-      ...override
+      status: "In Transit",
+      origin: "Lagos, Nigeria",
+      destination: "Abuja, Nigeria",
+      current_location: "Ibadan Outskirts",
+      weight: (10 + Math.random() * 100).toFixed(2),
+      sender_name: "John Business Ltd",
+      sender_email: "johndoe@example.com",
+      receiver_name: "Jane Enterprise",
+      receiver_email: "jane@example.com",
+      term: "Express",
+      created_at: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString(),
+      estimated_delivery: new Date(Date.now() + (2 + Math.random() * 5) * 24 * 60 * 60 * 1000).toISOString()
     };
   },
-  
-  /**
-   * Generate mock tracking events
-   */
-  generateMockTrackingEvents(shipmentId: string, count = 3) {
-    const events = [];
-    const now = new Date();
+
+  // Generate multiple mock shipments
+  generateMockShipments: (count: number = 10) => {
+    return Array(count).fill(null).map(() => mockData.generateMockShipment());
+  },
+
+  // Generate mock tracking events for a shipment
+  generateMockTrackingEvents: (shipmentId: string, count: number = 5) => {
+    const events = [
+      "Order Placed",
+      "Processing",
+      "Picked Up",
+      "In Transit",
+      "At Local Facility",
+      "Out for Delivery",
+      "Delivered"
+    ];
     
-    for (let i = 0; i < count; i++) {
-      events.push({
-        id: uuidv4(),
+    const locations = [
+      "Lagos Warehouse",
+      "Lagos Processing Center",
+      "Ibadan Distribution Center",
+      "Ibadan Outskirts",
+      "Oshogbo Transfer Station",
+      "Abuja Processing Center",
+      "Abuja Distribution Center"
+    ];
+    
+    return Array(count).fill(null).map((_, index) => {
+      const daysAgo = count - index - 1;
+      return {
+        id: `event_${Math.random().toString(36).substring(2, 9)}`,
         shipment_id: shipmentId,
-        status: i === 0 ? 'In Transit' : i === count - 1 ? 'Picked Up' : 'Processing',
-        location: i === 0 ? 'Chicago, IL' : i === count - 1 ? 'New York, NY' : 'Columbus, OH',
-        timestamp: new Date(now.getTime() - (i * 24 * 60 * 60 * 1000)).toISOString(),
-        description: i === 0 ? 'Package is in transit' : i === count - 1 ? 'Package has been picked up by courier' : 'Package is being processed'
-      });
-    }
-    
-    return events;
-  },
-  
-  /**
-   * Generate mock notification
-   */
-  generateMockNotification(override = {}) {
-    return {
-      id: uuidv4(),
-      title: 'Shipment Update',
-      content: 'Your shipment is now in transit.',
-      user_id: uuidv4(),
-      created_at: new Date().toISOString(),
-      read: false,
-      ...override
-    };
+        status: events[Math.min(index, events.length - 1)],
+        location: locations[Math.min(index, locations.length - 1)],
+        timestamp: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+        description: `Shipment ${events[Math.min(index, events.length - 1)].toLowerCase()} at ${locations[Math.min(index, locations.length - 1)]}`
+      };
+    }).reverse(); // Most recent events first
   }
 };
+
+export default mockData;

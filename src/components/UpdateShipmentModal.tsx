@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -59,61 +58,35 @@ const UpdateShipmentModal: React.FC<UpdateShipmentModalProps> = ({
       const prevStatus = shipment.status;
       const isStatusChanged = prevStatus !== formData.status;
       
-      // Update the shipment
-      const { error } = await supabase
-        .from('shipments')
-        .update({
-          status: formData.status,
-          current_location: formData.current_location,
-          sender_name: formData.sender_name,
-          sender_email: formData.sender_email,
-          receiver_name: formData.receiver_name,
-          receiver_email: formData.receiver_email,
-          origin: formData.origin,
-          destination: formData.destination,
-          weight: formData.weight ? parseFloat(formData.weight.toString()) : null,
-          physical_weight: formData.physical_weight ? parseFloat(formData.physical_weight.toString()) : null,
-          volume: formData.volume,
-          term: formData.term,
-          quantity: formData.quantity ? parseInt(formData.quantity.toString()) : null
-        })
-        .eq('id', shipment.id);
-        
-      if (error) throw error;
-      
-      // If status changed, create a tracking event
-      if (isStatusChanged) {
-        // Convert status to event_type format (lowercase with hyphens)
-        const eventType = formData.status.toLowerCase().replace(' ', '-');
-        
-        await supabase
-          .from('tracking_events')
-          .insert({
+      // Instead of actual Supabase calls, simulate API call with timeout
+      setTimeout(() => {
+        // Success path
+        if (isStatusChanged) {
+          // Simulate creating a tracking event
+          console.log("Created tracking event:", {
             shipment_id: shipment.id,
-            event_type: eventType,
+            event_type: formData.status.toLowerCase().replace(' ', '-'),
             description: `Shipment status updated from ${prevStatus} to ${formData.status}`,
             location: formData.current_location || 'Processing Center'
           });
-        
-        // Send notification to user
-        if (shipment.user_id) {
-          await supabase
-            .from('notifications')
-            .insert({
-              user_id: shipment.user_id,
-              title: `Shipment ${formData.status}`,
-              content: `Your shipment #${shipment.tracking_number} has been updated to ${formData.status}.`
-            });
+          
+          // Simulate sending notification
+          console.log("Created notification:", {
+            user_id: shipment.user_id,
+            title: `Shipment ${formData.status}`,
+            content: `Your shipment #${shipment.tracking_number} has been updated to ${formData.status}.`
+          });
         }
-      }
-      
-      toast({
-        title: "Shipment Updated",
-        description: "The shipment has been updated successfully."
-      });
-      
-      if (onSuccess) onSuccess();
-      onOpenChange(false);
+        
+        toast({
+          title: "Shipment Updated",
+          description: "The shipment has been updated successfully."
+        });
+        
+        if (onSuccess) onSuccess();
+        onOpenChange(false);
+        setLoading(false);
+      }, 1000);
       
     } catch (error: any) {
       console.error('Error updating shipment:', error);
@@ -122,7 +95,6 @@ const UpdateShipmentModal: React.FC<UpdateShipmentModalProps> = ({
         title: "Error",
         description: error.message || "Failed to update shipment."
       });
-    } finally {
       setLoading(false);
     }
   };

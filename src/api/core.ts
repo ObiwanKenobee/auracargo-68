@@ -1,5 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
+import { PostgrestError } from '@supabase/supabase-js';
+
+type TableNames = keyof Tables;
+
+type TableData<T extends TableNames> = Tables[T]['Row'];
 
 /**
  * Core API utility for CRUD operations
@@ -10,7 +16,7 @@ export const api = {
    * @param table - The table to fetch from
    * @param options - Query options
    */
-  async fetch(table: string, options?: { 
+  async fetch<T extends TableNames>(table: T, options?: { 
     id?: string, 
     filters?: Record<string, any>, 
     limit?: number,
@@ -19,7 +25,8 @@ export const api = {
     pageSize?: number
   }) {
     try {
-      let query = supabase.from(table).select('*');
+      // Using type assertion to handle the dynamic table name
+      let query = supabase.from(table as string);
       
       // Apply filters
       if (options?.id) {
@@ -70,10 +77,10 @@ export const api = {
    * @param table - The table to fetch from
    * @param id - The ID of the record to fetch
    */
-  async getById(table: string, id: string) {
+  async getById<T extends TableNames>(table: T, id: string) {
     try {
       const { data, error } = await supabase
-        .from(table)
+        .from(table as string)
         .select('*')
         .eq('id', id)
         .single();
@@ -95,11 +102,12 @@ export const api = {
    * @param table - The table to insert into
    * @param data - The data to insert
    */
-  async create(table: string, data: Record<string, any>) {
+  async create<T extends TableNames>(table: T, data: Partial<TableData<T>>) {
     try {
+      // Using type assertion to handle the dynamic table name
       const { data: result, error } = await supabase
-        .from(table)
-        .insert(data)
+        .from(table as string)
+        .insert(data as any)
         .select();
       
       if (error) {
@@ -120,11 +128,12 @@ export const api = {
    * @param id - The ID of the record to update
    * @param data - The data to update
    */
-  async update(table: string, id: string, data: Record<string, any>) {
+  async update<T extends TableNames>(table: T, id: string, data: Partial<TableData<T>>) {
     try {
+      // Using type assertion to handle the dynamic table name
       const { data: result, error } = await supabase
-        .from(table)
-        .update(data)
+        .from(table as string)
+        .update(data as any)
         .eq('id', id)
         .select();
       
@@ -145,10 +154,11 @@ export const api = {
    * @param table - The table to delete from
    * @param id - The ID of the record to delete
    */
-  async delete(table: string, id: string) {
+  async delete<T extends TableNames>(table: T, id: string) {
     try {
+      // Using type assertion to handle the dynamic table name
       const { error } = await supabase
-        .from(table)
+        .from(table as string)
         .delete()
         .eq('id', id);
       
