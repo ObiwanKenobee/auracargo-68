@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, User, Phone, Send } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -39,40 +39,27 @@ const ContactForm = () => {
     setLoading(true);
     
     try {
-      // Create a support conversation for the contact form submission
-      const { data: conversationData, error: conversationError } = await supabase
-        .from('support_conversations')
-        .insert({
-          user_id: user?.id || null,
-          title: `Contact Form: ${formData.name}`,
-          guest_email: !user ? formData.email : null,
-        })
-        .select('id')
-        .single();
+      const threadId = uuidv4();
       
-      if (conversationError) throw conversationError;
-      
-      // Add the message to the conversation
-      const { error: messageError } = await supabase
-        .from('support_messages')
+      const { error } = await supabase
+        .from('messages')
         .insert({
-          conversation_id: conversationData.id,
-          sender_id: user?.id || null,
-          is_admin: false,
-          content: formData.message,
-          guest_name: !user ? formData.name : null,
-          guest_email: !user ? formData.email : null,
+          thread_id: threadId,
+          sender_id: user?.id || formData.email,
+          content: `Contact Form Submission:
+            Name: ${formData.name}
+            Email: ${formData.email}
+            Phone: ${formData.phone}
+            Message: ${formData.message}`
         });
       
-      if (messageError) throw messageError;
+      if (error) throw error;
       
-      // Show success message
       toast({
         title: "Message Sent",
         description: "Thank you for contacting us. We'll respond shortly.",
       });
       
-      // Reset form
       setFormData({
         name: "",
         email: "",

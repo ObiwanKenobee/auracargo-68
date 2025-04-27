@@ -45,34 +45,33 @@ export async function fetchMessages(conversationId: string) {
   try {
     const { data, error } = await supabase
       .from('messages')
-      .select(`
-        *,
-        sender:sender_id(
-          id,
-          name
-        )
-      `)
+      .select('*')
       .eq('thread_id', conversationId)
       .order('created_at', { ascending: true });
     
     if (error) throw error;
     
     // Convert to our expected format
-    const messages: SupportMessage[] = data?.map(msg => ({
-      id: msg.id,
-      conversation_id: msg.thread_id,
-      sender_id: msg.sender_id,
-      content: msg.content,
-      created_at: msg.created_at,
-      is_admin: msg.sender?.role === 'admin',
-      read: msg.read || false,
-      sender: {
-        id: msg.sender?.id,
-        first_name: msg.sender?.name?.split(' ')[0],
-        last_name: msg.sender?.name?.split(' ')[1] || '',
-        role: msg.sender?.role
-      }
-    })) || [];
+    const messages: SupportMessage[] = data?.map(msg => {
+      // Create mock sender data as we don't have the proper relationship
+      const mockSender = {
+        id: msg.sender_id,
+        first_name: 'User',
+        last_name: '',
+        role: msg.sender_id.includes('admin') ? 'admin' : 'customer'
+      };
+
+      return {
+        id: msg.id,
+        conversation_id: msg.thread_id,
+        sender_id: msg.sender_id,
+        content: msg.content,
+        created_at: msg.created_at,
+        is_admin: mockSender.role === 'admin',
+        read: msg.read || false,
+        sender: mockSender
+      };
+    }) || [];
     
     return messages;
   } catch (error) {

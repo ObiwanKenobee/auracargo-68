@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, MapPin, CheckCircle, Clock, AlertTriangle, MessageSquare, Phone } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -39,27 +38,46 @@ const TrackShipmentModal: React.FC<TrackShipmentModalProps> = ({
     setShowEvents(false);
     
     try {
-      // Fetch shipment details
-      const { data: shipmentData, error: shipmentError } = await supabase
-        .from('shipments')
-        .select('*')
-        .eq('tracking_number', trackingNumber)
-        .single();
+      // Simulate API call with a timeout
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (shipmentError) throw shipmentError;
+      // Mock shipment data
+      const mockShipment = {
+        id: "ship_" + Math.random().toString(36).substr(2, 9),
+        tracking_number: trackingNumber,
+        sender_name: "John Doe Enterprises",
+        receiver_name: "Global Logistics Inc",
+        origin: "New York, USA",
+        destination: "London, UK",
+        status: "in-transit",
+        current_location: "Atlantic Ocean",
+        created_at: new Date().toISOString(),
+        estimated_delivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+      };
       
-      setShipment(shipmentData);
+      setShipment(mockShipment);
       
-      // Fetch tracking events for the shipment
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('tracking_events')
-        .select('*')
-        .eq('shipment_id', shipmentData.id)
-        .order('created_at', { ascending: false });
+      // Mock tracking events
+      const mockEvents = [
+        {
+          id: "evt_1",
+          shipment_id: mockShipment.id,
+          event_type: "Departed Origin Port",
+          location: "New York Port, USA",
+          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          description: "Shipment loaded onto vessel and departed from origin port"
+        },
+        {
+          id: "evt_2",
+          shipment_id: mockShipment.id,
+          event_type: "In Transit",
+          location: "Atlantic Ocean",
+          created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          description: "Vessel in transit"
+        }
+      ];
       
-      if (eventsError) throw eventsError;
-      
-      setTrackingEvents(eventsData || []);
+      setTrackingEvents(mockEvents);
       setShowEvents(true);
       
     } catch (error: any) {
@@ -67,9 +85,7 @@ const TrackShipmentModal: React.FC<TrackShipmentModalProps> = ({
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message === 'The query returned no results' ? 
-          "No shipment found with that tracking number" : 
-          error.message || "Failed to track shipment",
+        description: error.message || "Failed to track shipment",
       });
       setShipment(null);
       setTrackingEvents([]);

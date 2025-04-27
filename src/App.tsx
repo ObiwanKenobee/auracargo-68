@@ -71,7 +71,8 @@ function App() {
                 <Overview 
                   loading={false} 
                   data={{
-                    recentShipments: [],
+                    shipments: [],
+                    notifications: [],
                     stats: {
                       totalShipments: 0,
                       inTransit: 0,
