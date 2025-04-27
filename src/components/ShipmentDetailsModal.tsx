@@ -77,9 +77,9 @@ const ShipmentDetailsModal = ({ shipmentId, isOpen, onClose }: ShipmentDetailsMo
           <div className="space-y-6">
             <div className="flex justify-between items-start">
               <Badge variant={
-                shipment.status === 'Delivered' ? 'secondary' :
+                shipment.status === 'Delivered' ? 'default' :
                 shipment.status === 'In Transit' ? 'outline' :
-                'default'
+                'secondary'
               }>
                 {shipment.status}
               </Badge>
