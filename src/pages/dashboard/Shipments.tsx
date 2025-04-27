@@ -206,9 +206,9 @@ const ShipmentsPage: React.FC<ShipmentsPageProps> = ({ loading, shipments }) => 
 
       {selectedShipment && (
         <ShipmentDetailsModal
-          open={showDetailsModal}
-          onOpenChange={setShowDetailsModal}
-          shipment={selectedShipment}
+          shipmentId={selectedShipment.id}
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
         />
       )}
     </div>

@@ -1,11 +1,9 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
 import { Loader2, Package, ArrowLeft } from "lucide-react";
@@ -35,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { mockData } from "@/utils/mockData";
 
 const shipmentFormSchema = z.object({
   origin: z.string().min(5, { message: "Origin address is required" }),
@@ -82,40 +81,15 @@ const CreateShipment = () => {
       // Generate tracking number
       const trackingNumber = `AUR${Math.floor(100000 + Math.random() * 900000)}`;
       
-      // Create shipment - the database trigger will handle setting status and creating the tracking event
-      const { data: shipmentResult, error: shipmentError } = await supabase
-        .from('shipments')
-        .insert([
-          {
-            origin: data.origin,
-            destination: data.destination,
-            weight: data.weight,
-            tracking_number: trackingNumber,
-            user_id: user.id,
-            sender_name: data.sender_name,
-            sender_email: data.sender_email,
-            receiver_name: data.receiver_name,
-            receiver_email: data.receiver_email,
-            term: data.term,
-            physical_weight: data.physical_weight,
-            quantity: data.quantity,
-            status: 'In Transit' // Set status explicitly to ensure it works with the trigger
-          }
-        ])
-        .select();
+      // Create a mock shipment instead of going to Supabase
+      const mockShipment = mockData.generateMockShipment({
+        ...data,
+        tracking_number: trackingNumber,
+        user_id: user.id,
+        status: 'In Transit'
+      });
       
-      if (shipmentError) throw shipmentError;
-      
-      // Create notification
-      await supabase
-        .from('notifications')
-        .insert([
-          {
-            title: "New Shipment Created",
-            content: `Your shipment to ${data.destination} has been created with tracking number ${trackingNumber} and is in transit.`,
-            user_id: user.id
-          }
-        ]);
+      console.log("Created mock shipment:", mockShipment);
       
       toast({
         title: "Shipment Created!",

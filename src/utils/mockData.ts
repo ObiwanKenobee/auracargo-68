@@ -1,233 +1,194 @@
 
-// This file is used to generate mock data for the application
-// Useful during development or when the backend is not connected
-
+/**
+ * Utility to generate mock data for the application
+ */
 export const mockData = {
-  // Generate a mock shipment with customizable properties
-  generateMockShipment: (options: { id?: string } = {}) => {
-    const id = options.id || `ship_${Math.random().toString(36).substring(2, 9)}`;
+  /**
+   * Generate a list of mock shipments
+   */
+  generateMockShipments(count = 10) {
+    const shipments = [];
+    
+    for (let i = 0; i < count; i++) {
+      shipments.push(this.generateMockShipment());
+    }
+    
+    return shipments;
+  },
+
+  /**
+   * Generate a single mock shipment with optional overrides
+   */
+  generateMockShipment(overrides = {}) {
+    const id = overrides.id || `ship_${Math.random().toString(36).substring(2, 9)}`;
+    const now = new Date();
+    const pastDate = new Date(now.getTime() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000);
+    
+    const origins = [
+      "Shanghai, China",
+      "Rotterdam, Netherlands",
+      "Singapore Port",
+      "Los Angeles, USA",
+      "Dubai, UAE",
+      "Hamburg, Germany",
+      "Tokyo, Japan",
+      "Busan, South Korea"
+    ];
+    
+    const destinations = [
+      "New York, USA",
+      "Sydney, Australia",
+      "Mumbai, India",
+      "Rio de Janeiro, Brazil",
+      "Cape Town, South Africa",
+      "Barcelona, Spain",
+      "Vancouver, Canada",
+      "Istanbul, Turkey"
+    ];
+    
+    const statuses = ["Preparing", "In Transit", "On Hold", "Delivered", "Delayed"];
+    
+    const terms = ["Express", "Standard", "Economy", "Ground"];
+    
     return {
       id,
-      tracking_number: `AUR${Math.floor(100000 + Math.random() * 900000)}`,
-      status: "In Transit",
-      origin: "Lagos, Nigeria",
-      destination: "Abuja, Nigeria",
-      current_location: "Ibadan Outskirts",
-      weight: (10 + Math.random() * 100).toFixed(2),
-      sender_name: "John Business Ltd",
-      sender_email: "johndoe@example.com",
-      receiver_name: "Jane Enterprise",
-      receiver_email: "jane@example.com",
-      term: "Express",
-      created_at: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString(),
-      estimated_delivery: new Date(Date.now() + (2 + Math.random() * 5) * 24 * 60 * 60 * 1000).toISOString()
+      tracking_number: overrides.tracking_number || `AUR${Math.floor(100000 + Math.random() * 900000)}`,
+      user_id: overrides.user_id || `user_${Math.random().toString(36).substring(2, 9)}`,
+      origin: overrides.origin || origins[Math.floor(Math.random() * origins.length)],
+      destination: overrides.destination || destinations[Math.floor(Math.random() * destinations.length)],
+      current_location: overrides.current_location || this.getRandomLocation(),
+      status: overrides.status || statuses[Math.floor(Math.random() * statuses.length)],
+      weight: overrides.weight || Math.floor(Math.random() * 1000) / 10 + 0.5,
+      term: overrides.term || terms[Math.floor(Math.random() * terms.length)],
+      sender_name: overrides.sender_name || this.getRandomName(),
+      sender_email: overrides.sender_email || `sender${Math.floor(Math.random() * 1000)}@example.com`,
+      receiver_name: overrides.receiver_name || this.getRandomName(),
+      receiver_email: overrides.receiver_email || `receiver${Math.floor(Math.random() * 1000)}@example.com`,
+      created_at: overrides.created_at || pastDate.toISOString(),
+      updated_at: overrides.updated_at || now.toISOString(),
+      physical_weight: overrides.physical_weight || Math.floor(Math.random() * 900) / 10 + 0.5,
+      quantity: overrides.quantity || Math.floor(Math.random() * 10) + 1,
+      volume: overrides.volume || `${Math.floor(Math.random() * 5) + 1}x${Math.floor(Math.random() * 5) + 1}x${Math.floor(Math.random() * 5) + 1} m³`,
     };
   },
 
-  // Generate multiple mock shipments
-  generateMockShipments: (count: number = 10) => {
-    return Array(count).fill(null).map(() => mockData.generateMockShipment());
-  },
-
-  // Generate mock tracking events for a shipment
-  generateMockTrackingEvents: (shipmentId: string, count: number = 5) => {
-    const events = [
-      "Order Placed",
-      "Processing",
-      "Picked Up",
-      "In Transit",
-      "At Local Facility",
-      "Out for Delivery",
+  /**
+   * Generate tracking events for a shipment
+   */
+  generateMockTrackingEvents(shipmentId, count = 5) {
+    const events = [];
+    const now = new Date();
+    const statuses = [
+      "Order Received", 
+      "Processing", 
+      "Shipped", 
+      "In Transit", 
+      "Out for Delivery", 
+      "Delivery Attempted", 
       "Delivered"
     ];
     
-    const locations = [
-      "Lagos Warehouse",
-      "Lagos Processing Center",
-      "Ibadan Distribution Center",
-      "Ibadan Outskirts",
-      "Oshogbo Transfer Station",
-      "Abuja Processing Center",
-      "Abuja Distribution Center"
-    ];
-    
-    return Array(count).fill(null).map((_, index) => {
-      const daysAgo = count - index - 1;
-      return {
+    // Generate events from oldest to newest
+    for (let i = 0; i < count; i++) {
+      const daysAgo = count - i - 1;
+      const eventDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000) - Math.floor(Math.random() * 12 * 60 * 60 * 1000));
+      
+      events.push({
         id: `event_${Math.random().toString(36).substring(2, 9)}`,
         shipment_id: shipmentId,
-        status: events[Math.min(index, events.length - 1)],
-        location: locations[Math.min(index, locations.length - 1)],
-        timestamp: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
-        description: `Shipment ${events[Math.min(index, events.length - 1)].toLowerCase()} at ${locations[Math.min(index, locations.length - 1)]}`
-      };
-    }).reverse(); // Most recent events first
-  },
-
-  // Generate mock supplier data
-  generateMockSupplier: (options: { id?: string } = {}) => {
-    const id = options.id || `supp_${Math.random().toString(36).substring(2, 9)}`;
-    const categories = ["Raw Materials", "Electronics", "Textiles", "Logistics", "Packaging"];
-    const locations = ["Lagos, Nigeria", "Accra, Ghana", "Nairobi, Kenya", "Johannesburg, South Africa"];
+        status: statuses[Math.min(i, statuses.length - 1)],
+        location: this.getRandomLocation(),
+        timestamp: eventDate.toISOString(),
+        description: this.getRandomEventDescription(statuses[Math.min(i, statuses.length - 1)])
+      });
+    }
     
-    return {
-      id,
-      name: `Supplier ${Math.floor(Math.random() * 1000)}`,
-      category: categories[Math.floor(Math.random() * categories.length)],
-      location: locations[Math.floor(Math.random() * locations.length)],
-      risk_score: Math.floor(Math.random() * 100),
-      status: Math.random() > 0.2 ? "active" : "inactive",
-      verified: Math.random() > 0.3,
-      contact_email: `supplier${Math.floor(Math.random() * 1000)}@example.com`,
-      contact_phone: `+${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10000000000)}`,
-      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
-    };
+    return events;
   },
 
-  // Generate multiple mock suppliers
-  generateMockSuppliers: (count: number = 10) => {
-    return Array(count).fill(null).map(() => mockData.generateMockSupplier());
-  },
-
-  // Generate mock partner data
-  generateMockPartner: (options: { id?: string } = {}) => {
-    const id = options.id || `part_${Math.random().toString(36).substring(2, 9)}`;
-    const partnershipTypes = ["Technology", "Distribution", "Logistics", "Financial", "Research"];
-    const industries = ["Renewable Energy", "Agriculture", "Manufacturing", "Technology", "Healthcare"];
-    const locations = ["Lagos, Nigeria", "Accra, Ghana", "Nairobi, Kenya", "Johannesburg, South Africa"];
+  /**
+   * Get a random person name
+   */
+  getRandomName() {
+    const firstNames = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth", "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen"];
+    const lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson", "Martinez", "Anderson", "Taylor", "Thomas", "Hernandez", "Moore", "Martin", "Jackson", "Thompson", "White"];
     
-    return {
-      id,
-      name: `Partner ${Math.floor(Math.random() * 1000)} Ltd`,
-      partnership_type: partnershipTypes[Math.floor(Math.random() * partnershipTypes.length)],
-      industry: industries[Math.floor(Math.random() * industries.length)],
-      location: locations[Math.floor(Math.random() * locations.length)],
-      description: `Strategic partner specializing in ${partnershipTypes[Math.floor(Math.random() * partnershipTypes.length)].toLowerCase()} solutions.`,
-      logo_url: `https://via.placeholder.com/150?text=${encodeURIComponent("Partner")}`,
-      website_url: `https://partner${Math.floor(Math.random() * 1000)}.example.com`,
-      contact_email: `partner${Math.floor(Math.random() * 1000)}@example.com`,
-      status: Math.random() > 0.2 ? "active" : "inactive",
-      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
-    };
+    return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
   },
 
-  // Generate multiple mock partners
-  generateMockPartners: (count: number = 5) => {
-    return Array(count).fill(null).map(() => mockData.generateMockPartner());
-  },
-  
-  // Generate mock ESG report
-  generateMockESGReport: (options: { id?: string, userId?: string } = {}) => {
-    const id = options.id || `esg_${Math.random().toString(36).substring(2, 9)}`;
-    const reportTypes = ["Carbon Footprint", "Sustainability", "Social Impact", "Governance", "Annual ESG"];
-    const reportType = reportTypes[Math.floor(Math.random() * reportTypes.length)];
-    
-    return {
-      id,
-      user_id: options.userId || `user_${Math.random().toString(36).substring(2, 9)}`,
-      title: `${reportType} Report - Q${Math.floor(Math.random() * 4) + 1} ${new Date().getFullYear()}`,
-      report_type: reportType,
-      content: {
-        summary: `This report outlines our ${reportType.toLowerCase()} initiatives and progress for the quarter.`,
-        key_metrics: [
-          { name: "Carbon Emissions", value: Math.floor(Math.random() * 1000), unit: "tons CO₂e" },
-          { name: "Water Usage", value: Math.floor(Math.random() * 10000), unit: "cubic meters" }
-        ],
-        highlights: [
-          "Reduced carbon emissions by 15%",
-          "Implemented new sustainability policies",
-          "Increased community engagement"
-        ]
-      },
-      reporting_period: `Q${Math.floor(Math.random() * 4) + 1} ${new Date().getFullYear()}`,
-      status: Math.random() > 0.3 ? "published" : "draft",
-      created_at: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-      published_at: Math.random() > 0.3 ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() : null
-    };
-  },
-
-  // Generate multiple mock ESG reports
-  generateMockESGReports: (count: number = 5, userId?: string) => {
-    return Array(count).fill(null).map(() => mockData.generateMockESGReport({ userId }));
-  },
-
-  // Generate mock ESG metric
-  generateMockESGMetric: (options: { id?: string, userId?: string } = {}) => {
-    const id = options.id || `metric_${Math.random().toString(36).substring(2, 9)}`;
-    const metricTypes = ["Environmental", "Social", "Governance"];
-    const metricNames = [
-      "Carbon Emissions", "Water Usage", "Energy Consumption",
-      "Employee Satisfaction", "Community Investment", "Gender Diversity",
-      "Board Independence", "Ethics Violations", "Sustainability Goals"
+  /**
+   * Get a random location
+   */
+  getRandomLocation() {
+    const locations = [
+      "New York, USA",
+      "Los Angeles, USA",
+      "Chicago, USA",
+      "Houston, USA",
+      "Phoenix, USA",
+      "London, UK",
+      "Shanghai, China",
+      "Beijing, China",
+      "Tokyo, Japan",
+      "Delhi, India",
+      "Mumbai, India",
+      "São Paulo, Brazil",
+      "Mexico City, Mexico",
+      "Cairo, Egypt",
+      "Sydney, Australia",
+      "Istanbul, Turkey",
+      "Paris, France",
+      "Berlin, Germany",
+      "Madrid, Spain",
+      "Rome, Italy"
     ];
     
-    const metricType = metricTypes[Math.floor(Math.random() * metricTypes.length)];
-    const metricName = metricNames[Math.floor(Math.random() * metricNames.length)];
-    
-    const units = {
-      "Carbon Emissions": "tons CO₂e",
-      "Water Usage": "cubic meters",
-      "Energy Consumption": "kWh",
-      "Employee Satisfaction": "percent",
-      "Community Investment": "USD",
-      "Gender Diversity": "percent",
-      "Board Independence": "percent",
-      "Ethics Violations": "count",
-      "Sustainability Goals": "percent completed"
-    };
-    
-    return {
-      id,
-      user_id: options.userId || `user_${Math.random().toString(36).substring(2, 9)}`,
-      metric_name: metricName,
-      metric_type: metricType,
-      metric_value: metricName.includes("percent") ? 
-        Math.floor(Math.random() * 100) : 
-        Math.floor(Math.random() * 1000),
-      unit: units[metricName as keyof typeof units],
-      source: Math.random() > 0.5 ? "Internal Audit" : "External Verification",
-      timestamp: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000).toISOString()
-    };
+    return locations[Math.floor(Math.random() * locations.length)];
   },
 
-  // Generate multiple mock ESG metrics
-  generateMockESGMetrics: (count: number = 10, userId?: string) => {
-    return Array(count).fill(null).map(() => mockData.generateMockESGMetric({ userId }));
-  },
-
-  // Generate mock risk assessment
-  generateMockRiskAssessment: (options: { id?: string, userId?: string } = {}) => {
-    const id = options.id || `risk_${Math.random().toString(36).substring(2, 9)}`;
-    const categories = ["Supply Chain", "Environmental", "Geopolitical", "Financial", "Operational"];
-    const category = categories[Math.floor(Math.random() * categories.length)];
-    
-    const impactScore = Math.floor(Math.random() * 10) + 1;
-    const probabilityScore = Math.floor(Math.random() * 10) + 1;
-    const riskLevel = 
-      impactScore * probabilityScore > 50 ? "high" : 
-      impactScore * probabilityScore > 25 ? "medium" : "low";
-    
-    return {
-      id,
-      user_id: options.userId || `user_${Math.random().toString(36).substring(2, 9)}`,
-      title: `${category} Risk - ${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-      description: `Potential risk related to ${category.toLowerCase()} factors that could impact operations.`,
-      category,
-      impact_score: impactScore,
-      probability_score: probabilityScore,
-      risk_level: riskLevel,
-      mitigation_plan: `Implement ${category.toLowerCase()} contingency measures and regular monitoring.`,
-      due_date: new Date(Date.now() + (30 + Math.random() * 60) * 24 * 60 * 60 * 1000).toISOString(),
-      status: "active",
-      created_at: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+  /**
+   * Get a random event description based on status
+   */
+  getRandomEventDescription(status) {
+    const descriptions = {
+      "Order Received": [
+        "Order has been received and is being processed.",
+        "Your order has been confirmed and entered into our system.",
+        "Order received and payment confirmed."
+      ],
+      "Processing": [
+        "Package is being prepared for shipment.",
+        "Your order is being processed at our facility.",
+        "Items are being gathered and packaged."
+      ],
+      "Shipped": [
+        "Package has been shipped.",
+        "Your order has left our facility.",
+        "Shipment has been handed to the carrier."
+      ],
+      "In Transit": [
+        "Package is in transit to the next facility.",
+        "Your shipment is on the way to its destination.",
+        "Package is moving through our network."
+      ],
+      "Out for Delivery": [
+        "Package is out for delivery.",
+        "Your package is on the delivery vehicle.",
+        "Delivery will be attempted today."
+      ],
+      "Delivery Attempted": [
+        "Delivery was attempted but package couldn't be delivered.",
+        "Delivery attempted, no one was available to receive the package.",
+        "We tried to deliver your package but were unable to."
+      ],
+      "Delivered": [
+        "Package has been delivered.",
+        "Your package has been delivered at the front door.",
+        "Shipment was received by the recipient."
+      ]
     };
-  },
-
-  // Generate multiple mock risk assessments
-  generateMockRiskAssessments: (count: number = 5, userId?: string) => {
-    return Array(count).fill(null).map(() => mockData.generateMockRiskAssessment({ userId }));
+    
+    const options = descriptions[status] || ["Status update for your package."];
+    return options[Math.floor(Math.random() * options.length)];
   }
 };
-
-export default mockData;
