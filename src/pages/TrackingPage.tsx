@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -24,6 +25,7 @@ import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { mockData } from "@/utils/mockData";
 
 const TrackingPage = () => {
   const { trackingNumber } = useParams<{ trackingNumber: string }>();
@@ -44,29 +46,24 @@ const TrackingPage = () => {
     setError(null);
 
     try {
-      const { data: shipmentData, error: shipmentError } = await supabase
-        .from("shipments")
-        .select("*")
-        .eq("tracking_number", tracking)
-        .single();
-
-      if (shipmentError) {
-        throw new Error(shipmentError.message === "The result contains 0 rows" 
-          ? "No shipment found with this tracking number" 
-          : shipmentError.message);
+      // Mock API implementation instead of direct Supabase calls
+      // Simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Get a mock shipment
+      const mockShipment = mockData.generateMockShipment({ tracking_number: tracking });
+      
+      if (Math.random() > 0.8 && tracking !== 'AUR123456') {
+        // Simulate not found error for some tracking numbers (but always show AUR123456)
+        throw new Error("No shipment found with this tracking number");
       }
-
-      setShipment(shipmentData);
-
-      const { data: eventsData, error: eventsError } = await supabase
-        .from("tracking_events")
-        .select("*")
-        .eq("shipment_id", shipmentData.id)
-        .order("created_at", { ascending: false });
-
-      if (eventsError) throw new Error(eventsError.message);
-
-      setTrackingEvents(eventsData || []);
+      
+      setShipment(mockShipment);
+      
+      // Generate mock tracking events for the shipment
+      const mockEvents = mockData.generateMockTrackingEvents(mockShipment.id);
+      setTrackingEvents(mockEvents);
+      
     } catch (err: any) {
       console.error("Error fetching tracking data:", err);
       setError(err.message);
@@ -223,9 +220,9 @@ const TrackingPage = () => {
                                 <Package className="h-6 w-6 text-blue-600" />
                               </div>
                               <div className="ml-4 pt-1.5">
-                                <p className="font-medium">{event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}</p>
+                                <p className="font-medium">{event.status}</p>
                                 <p className="text-sm text-gray-500">{event.location || "Location not available"}</p>
-                                <p className="text-xs text-gray-400">{format(new Date(event.created_at), "MMM dd, yyyy h:mm a")}</p>
+                                <p className="text-xs text-gray-400">{format(new Date(event.timestamp), "MMM dd, yyyy h:mm a")}</p>
                                 {event.description && (
                                   <p className="mt-1 text-sm">{event.description}</p>
                                 )}

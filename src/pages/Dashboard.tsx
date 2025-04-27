@@ -8,7 +8,7 @@ import SettingsPage from "./dashboard/Settings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { api } from "@/api/core"; // Use our api utility instead of direct supabase calls
+import { mockData } from "@/utils/mockData"; // Use our mockData utility 
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -33,30 +33,20 @@ const Dashboard = () => {
       setLoading(true);
       
       try {
-        // Use our api utility instead of direct supabase calls
-        const shipmentsResult = await api.fetch("shipments", { 
-          filters: { user_id: user.id } 
-        });
+        // Add a small delay to simulate API call latency
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Generate mock shipments for this user
+        const mockShipments = mockData.generateMockShipments(5);
           
-        // Use our api utility for notifications too
-        const notificationsResult = await api.fetch("notifications", { 
-          filters: { user_id: user.id },
-          order: { column: "created_at", ascending: false }
+        // Generate mock notifications for this user
+        const mockNotifications = mockData.generateMockNotifications(user.id, 3);
+        
+        // Update state with mock data
+        setDashboardData({
+          shipments: mockShipments,
+          notifications: mockNotifications
         });
-        
-        // Process shipments result
-        if (!shipmentsResult.error) {
-          setDashboardData(prev => ({ ...prev, shipments: shipmentsResult.data || [] }));
-        } else {
-          throw shipmentsResult.error;
-        }
-        
-        // Process notifications result
-        if (!notificationsResult.error) {
-          setDashboardData(prev => ({ ...prev, notifications: notificationsResult.data || [] }));
-        } else {
-          throw notificationsResult.error;
-        }
       } catch (error: any) {
         console.error('Error fetching dashboard data:', error);
         toast({
