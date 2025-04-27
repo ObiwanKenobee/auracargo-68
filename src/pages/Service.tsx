@@ -1,15 +1,15 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { CheckCircle2, MessageSquare, Globe, ShieldCheck, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import TrackOrder from '../components/TrackOrder';
+import { useState } from "react";
+import { Truck, Calendar, Clock, ArrowRight, Check, Info, MapPin, Star } from "lucide-react";
 
 const Service = () => {
   const { service } = useParams<{ service: string }>();
   
-  // Services data with SEO-friendly content
   const servicesData = {
     'air-freight': {
       name: 'Air Freight',
@@ -105,7 +105,6 @@ const Service = () => {
     }
   };
   
-  // If service doesn't exist in our data
   const currentService = service ? servicesData[service as keyof typeof servicesData] : null;
   
   if (!currentService) {
@@ -120,7 +119,6 @@ const Service = () => {
     );
   }
 
-  // Convert service slug to URL format
   const serviceSlug = service || '';
 
   return (
@@ -137,7 +135,6 @@ const Service = () => {
         />
         <link rel="canonical" href={`https://auracargo.com/services/${serviceSlug}`} />
         
-        {/* Schema.org markup for the service */}
         <script type="application/ld+json">
           {`
             {
@@ -190,7 +187,6 @@ const Service = () => {
       </div>
       
       <main className="min-h-screen">
-        {/* Hero Section */}
         <section className="py-12 md:py-20 bg-white">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -223,7 +219,6 @@ const Service = () => {
           </div>
         </section>
         
-        {/* Tracking Section */}
         <section className="bg-gray-50 py-12">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-bold text-center mb-8">Track Your {currentService.name} Shipment</h2>
@@ -231,7 +226,6 @@ const Service = () => {
           </div>
         </section>
         
-        {/* Service Features */}
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-4">{currentService.name} Services Features</h2>
@@ -252,7 +246,6 @@ const Service = () => {
           </div>
         </section>
         
-        {/* Benefits Section */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
@@ -274,7 +267,6 @@ const Service = () => {
           </div>
         </section>
         
-        {/* Global Network */}
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-4">Our Global {currentService.name} Network</h2>
@@ -305,7 +297,6 @@ const Service = () => {
           </div>
         </section>
         
-        {/* Why Choose Us */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">Why AuraCargo for {currentService.name}</h2>
@@ -354,7 +345,6 @@ const Service = () => {
           </div>
         </section>
         
-        {/* FAQ Section */}
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4 max-w-4xl">
             <h2 className="text-3xl font-bold text-center mb-4">{currentService.name} FAQ</h2>
@@ -402,7 +392,6 @@ const Service = () => {
           </div>
         </section>
         
-        {/* CTA Section */}
         <section className="bg-primary-500 text-white py-16">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Ship with AuraCargo?</h2>

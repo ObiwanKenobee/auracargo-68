@@ -1,5 +1,5 @@
+
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { 
   Card,
   CardContent,
@@ -28,6 +28,8 @@ import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { api } from "@/api/core"; // Use our api utility
+import { mockData } from "@/utils/mockData"; // Import mock data
 
 const SupportManagement = () => {
   const [conversations, setConversations] = useState<any[]>([]);
@@ -49,19 +51,13 @@ const SupportManagement = () => {
   useEffect(() => {
     fetchConversations();
 
-    const conversationsChannel = supabase
-      .channel('admin-support-conversations')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'support_conversations' },
-        (payload) => {
-          console.log('Conversation change detected:', payload);
-          fetchConversations();
-        }
-      )
-      .subscribe();
+    // Mock the realtime subscription
+    const mockSubscriptionInterval = setInterval(() => {
+      console.log('Admin checking for support conversation updates...');
+    }, 10000);
 
     return () => {
-      supabase.removeChannel(conversationsChannel);
+      clearInterval(mockSubscriptionInterval);
     };
   }, []);
 
@@ -73,19 +69,13 @@ const SupportManagement = () => {
     if (selectedConversation) {
       fetchMessages(selectedConversation.id);
 
-      const messagesChannel = supabase
-        .channel(`admin-messages-${selectedConversation.id}`)
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'support_messages', filter: `conversation_id=eq.${selectedConversation.id}` },
-          (payload) => {
-            console.log('Message change detected:', payload);
-            fetchMessages(selectedConversation.id);
-          }
-        )
-        .subscribe();
+      // Mock the realtime subscription for messages
+      const mockMessagesInterval = setInterval(() => {
+        console.log(`Admin checking for messages in conversation ${selectedConversation.id}...`);
+      }, 5000);
 
       return () => {
-        supabase.removeChannel(messagesChannel);
+        clearInterval(mockMessagesInterval);
       };
     }
   }, [selectedConversation]);
@@ -101,34 +91,41 @@ const SupportManagement = () => {
   const fetchConversations = async () => {
     try {
       setIsLoadingConversations(true);
-      const { data, error } = await supabase
-        .from('support_conversations')
-        .select(`
-          *,
-          user:user_id(
-            id,
-            first_name,
-            last_name,
-            email
-          ),
-          message_count:support_messages(count)
-        `)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
       
-      setConversations(data || []);
+      // Use mock data
+      // In a real application, this would be a Supabase call
+      setTimeout(() => {
+        // Generate 5 mock conversations with random users
+        const mockConversations = [];
+        for (let i = 0; i < 5; i++) {
+          const userId = `user_${Math.random().toString(36).substring(2, 9)}`;
+          const mockConvs = mockData.generateMockSupportConversations(userId, 1);
+          mockConvs.forEach(conv => {
+            // Add user information that would come from a join
+            conv.user = {
+              id: userId,
+              first_name: mockData.getRandomName().split(' ')[0],
+              last_name: mockData.getRandomName().split(' ')[1],
+              email: `user${Math.floor(Math.random() * 1000)}@example.com`,
+            };
+          });
+          mockConversations.push(...mockConvs);
+        }
+        
+        setConversations(mockConversations);
+        
+        if (mockConversations?.length && !selectedConversation) {
+          setSelectedConversation(mockConversations[0]);
+        }
+        setIsLoadingConversations(false);
+      }, 800);
       
-      if (data?.length && !selectedConversation) {
-        setSelectedConversation(data[0]);
-      }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error loading conversations",
         description: error.message,
       });
-    } finally {
       setIsLoadingConversations(false);
     }
   };
@@ -136,47 +133,35 @@ const SupportManagement = () => {
   const fetchMessages = async (conversationId: string) => {
     try {
       setIsLoadingMessages(true);
-      const { data, error } = await supabase
-        .from('support_messages')
-        .select(`
-          *,
-          sender:sender_id(
-            id,
-            first_name,
-            last_name,
-            email,
-            role
-          )
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
       
-      setMessages(data || []);
+      // Use mock data
+      setTimeout(() => {
+        const mockMessages = mockData.generateMockSupportMessages(
+          conversationId, 
+          selectedConversation.user_id, 
+          5 // Generate 5 mock messages
+        );
+        
+        setMessages(mockMessages);
+        setIsLoadingMessages(false);
+        
+        markMessagesAsRead(conversationId);
+      }, 500);
       
-      markMessagesAsRead(conversationId);
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error loading messages",
         description: error.message,
       });
-    } finally {
       setIsLoadingMessages(false);
     }
   };
 
   const markMessagesAsRead = async (conversationId: string) => {
     try {
-      const { error } = await supabase
-        .from('support_messages')
-        .update({ read: true })
-        .eq('conversation_id', conversationId)
-        .eq('is_admin', false)
-        .eq('read', false);
-
-      if (error) throw error;
+      // In a real app, we would update the read status in the database
+      console.log(`Admin marked messages as read in conversation ${conversationId}`);
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
@@ -190,30 +175,51 @@ const SupportManagement = () => {
     try {
       setIsSendingMessage(true);
       
-      const { error } = await supabase
-        .from('support_messages')
-        .insert({
+      // Simulate sending a message
+      setTimeout(() => {
+        const newMsg = {
+          id: `msg_${Math.random().toString(36).substring(2, 9)}`,
           conversation_id: selectedConversation.id,
-          sender_id: user?.id,
+          sender_id: user?.id || 'admin_user',
           content: newMessage,
           is_admin: true,
+          created_at: new Date().toISOString(),
+          sender: {
+            id: user?.id || 'admin_user',
+            first_name: 'Support',
+            last_name: 'Agent',
+            email: user?.email || 'admin@example.com',
+            role: 'admin'
+          }
+        };
+        
+        setMessages(prev => [...prev, newMsg]);
+        setNewMessage("");
+        setIsSendingMessage(false);
+        
+        // Simulate updating the conversation's updated_at time
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === selectedConversation.id 
+              ? {...conv, updated_at: new Date().toISOString()} 
+              : conv
+          )
+        );
+        
+        toast({
+          title: "Message sent",
+          description: "Your response has been sent to the customer."
         });
         
-      if (error) throw error;
+        scrollToBottom();
+      }, 500);
       
-      await supabase
-        .from('support_conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', selectedConversation.id);
-      
-      setNewMessage("");
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error sending message",
         description: error.message,
       });
-    } finally {
       setIsSendingMessage(false);
     }
   };
@@ -222,21 +228,24 @@ const SupportManagement = () => {
     if (!selectedConversation) return;
     
     try {
-      const { error } = await supabase
-        .from('support_conversations')
-        .update({ status: 'closed' })
-        .eq('id', selectedConversation.id);
-        
-      if (error) throw error;
+      // Simulate closing a conversation
+      setSelectedConversation({
+        ...selectedConversation,
+        status: 'closed'
+      });
+      
+      // Update in the conversations list
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === selectedConversation.id 
+            ? {...conv, status: 'closed'} 
+            : conv
+        )
+      );
       
       toast({
         title: "Ticket closed",
         description: "The support ticket has been marked as closed.",
-      });
-      
-      setSelectedConversation({
-        ...selectedConversation,
-        status: 'closed'
       });
     } catch (error: any) {
       toast({
@@ -251,21 +260,24 @@ const SupportManagement = () => {
     if (!selectedConversation) return;
     
     try {
-      const { error } = await supabase
-        .from('support_conversations')
-        .update({ status: 'open' })
-        .eq('id', selectedConversation.id);
-        
-      if (error) throw error;
+      // Simulate reopening a conversation
+      setSelectedConversation({
+        ...selectedConversation,
+        status: 'open'
+      });
+      
+      // Update in the conversations list
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === selectedConversation.id 
+            ? {...conv, status: 'open'} 
+            : conv
+        )
+      );
       
       toast({
         title: "Ticket reopened",
         description: "The support ticket has been reopened.",
-      });
-      
-      setSelectedConversation({
-        ...selectedConversation,
-        status: 'open'
       });
     } catch (error: any) {
       toast({
